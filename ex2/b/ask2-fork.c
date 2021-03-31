@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	if(p == 0) {
-		change_pname(root->name);
 		forker(root);
 		kill(getpid(), SIGSTOP);
 	}
@@ -71,10 +70,10 @@ int main(int argc, char *argv[])
 	printf("%s is initializing with PID: %ld and Parent PID: %ld \n", root->name, (long) p, (long) getpid());
 
 	sleep(SLEEP_TREE_SEC);
-
-	show_pstree(p);
 	
 	wait_for_ready_children(1);
+
+	show_pstree(p);
 
 	return 0;
 }
