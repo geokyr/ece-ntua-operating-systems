@@ -9,35 +9,36 @@
 #include "proc-common.h"
 
 #define SLEEP_PROC_SEC  10
+#define SLEEP_TREE_SEC  3
 
-void fork_builder(struct tree_node *root) {
-	pid_t pid;
-	int status[root->nr_children];
+void forker(struct tree_node *root) {
 	
-	pid = fork();
-	printf("root name %s, mypid %ld, childpid %ld\n", root->name, (long)getpid(), (long)pid);
+	pid_t pid;
+	
+	change_pname(root->name);
 
-	if (pid < 0) {
-		fprintf(stderr, "fork error at %s", root->name);
-		exit(1);
-	}
-	if (pid == 0) {
-		change_pname(root->name);
-		if(root->nr_children) {
-			for (int i = 0; i < root->nr_children; i++) {
-				fork_builder(root->children + i);
+	if(root->children){
+		
+		for(int i = 0; i < root->nr_children; i++){
+			pid = fork();
+			
+			if(pid < 0) {
+				perror("forker: fork");
+				exit(1);
+			}
+			if(pid == 0){
+				forker(root->children + i);
 			}
 		}
-		else {
-			//sleep(SLEEP_PROC_SEC);
-			exit(1);
-		}
+
+		wait_for_ready_children(root->nr_children);
+		kill(getpid(), SIGSTOP);
 	}
 	else {
-		for (int i = 0; i < root->nr_children; i++) {
-			pid = wait(&status[i]);
-		}
-	}
+		sleep(SLEEP_PROC_SEC);
+		kill(getpid(), SIGSTOP);
+	}	
+	
 }
 
 int main(int argc, char *argv[])
@@ -51,7 +52,27 @@ int main(int argc, char *argv[])
 
 	root = get_tree_from_file(argv[1]);
 	print_tree(root);
-	fork_builder(root);
+
+
+	pid_t p;
+
+	p = fork();
+
+	if(p < 0) {
+		perror("main: fork");
+		exit(1);
+	}
+	if(p == 0) {
+		change_pname(root->name);
+		forker(root);
+		kill(getpid(), SIGSTOP);
+	}
 	
+	sleep(SLEEP_TREE_SEC);
+
+	show_pstree(p);
+	
+	wait_for_ready_children(1);
+
 	return 0;
 }
