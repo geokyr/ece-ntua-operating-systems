@@ -10,34 +10,33 @@
 
 #define SLEEP_PROC_SEC  10
 
-pid_t fork_builder(struct tree_node *root) {
+void fork_builder(struct tree_node *root) {
 	pid_t pid;
+	int status[root->nr_children];
 	
 	pid = fork();
+	printf("root name %s, mypid %ld, childpid %ld\n", root->name, (long)getpid(), (long)pid);
+
 	if (pid < 0) {
 		fprintf(stderr, "fork error at %s", root->name);
 		exit(1);
 	}
 	if (pid == 0) {
 		change_pname(root->name);
-		printf("%s", root->name);
 		if(root->nr_children) {
-			int i;
-			int statusi[root->nr_children];
-			for (i = 0; i < root->nr_children; i++) {
-				pid_t pidi = fork_builder(root->children + i);
-				pidi = wait(&statusi[i]);
+			for (int i = 0; i < root->nr_children; i++) {
+				fork_builder(root->children + i);
 			}
 		}
 		else {
-			sleep(SLEEP_PROC_SEC);
+			//sleep(SLEEP_PROC_SEC);
 			exit(1);
 		}
-
-		return pid;
 	}
 	else {
-		return pid;
+		for (int i = 0; i < root->nr_children; i++) {
+			pid = wait(&status[i]);
+		}
 	}
 }
 
