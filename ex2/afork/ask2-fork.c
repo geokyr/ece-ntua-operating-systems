@@ -160,5 +160,6 @@ int main(void)
  * show_pstree uses fork to create a child process that executes the command created 
  * with sprintf (including pstree). 
  *
- * 3. Running out of memory, prevent fork bombs, not recycling PIDs (wrap) losing processes.
+ * 3. Running out of memory, prevent fork bombs, not recycling PIDs (wrap) causing loss of 
+ * current processes.
  */
