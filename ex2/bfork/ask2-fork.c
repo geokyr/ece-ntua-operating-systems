@@ -16,12 +16,12 @@ void forker(struct tree_node *root) {
 	pid_t pid;
 	
 	change_pname(root->name);
-
+	
 	if(root->children){
 		
 		for(int i = 0; i < root->nr_children; i++){
 			pid = fork();
-			
+	
 			if(pid < 0) {
 				perror("forker: fork");
 				exit(1);
@@ -29,6 +29,7 @@ void forker(struct tree_node *root) {
 			if(pid == 0){
 				forker(root->children + i);
 			}
+			printf("%s is initializing with PID: %ld and Parent PID: %ld \n", (root->children + i)->name, (long) pid, (long) getpid());
 		}
 
 		wait_for_ready_children(root->nr_children);
@@ -68,6 +69,8 @@ int main(int argc, char *argv[])
 		kill(getpid(), SIGSTOP);
 	}
 	
+	printf("%s is initializing with PID: %ld and Parent PID: %ld \n", root->name, (long) p, (long) getpid());
+
 	sleep(SLEEP_TREE_SEC);
 
 	show_pstree(p);
