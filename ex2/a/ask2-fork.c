@@ -130,14 +130,15 @@ int main(void)
 	sleep(SLEEP_TREE_SEC);
 
 	/* Print the process tree root at pid */
-	show_pstree(getpid());
-
+	
+	show_pstree(pid);
 	/* for ask2-signals */
 	/* kill(pid, SIGCONT); */
 
 	/* Wait for the root of the process tree to terminate */
 	pid = wait(&status);
 	explain_wait_status(pid, status);
+
 
 
 

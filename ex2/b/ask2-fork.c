@@ -9,41 +9,54 @@
 #include "proc-common.h"
 
 #define SLEEP_PROC_SEC  5
-#define SLEEP_TREE_SEC  3
+#define SLEEP_TREE_SEC 	3
 
 void forker(struct tree_node *root) {
 	
-	pid_t pid;
-	
 	change_pname(root->name);
-	sleep(1);							//to delay new level from creating processes before all children from current level are made
-	if(!root->children) {
-		sleep(SLEEP_PROC_SEC);
-		kill(getpid(), SIGSTOP);
-	}
+	printf("%s is initializing with PID: %ld  \n", root->name, (long) getpid());
 
-	else {
-		for(int i = 0; i < root->nr_children; i++){
+	if(root->children) {
+		int status;
+		pid_t pid;
+		int i;
+
+		for(i = 0; i < root->nr_children; i++){
 			pid = fork();
-	
+
 			if(pid < 0) {
 				perror("forker: fork");
 				exit(1);
 			}
-			if(pid == 0){
+			else if(pid == 0){
 				forker(root->children + i);
 			}
-			printf("%s is initializing with PID: %ld and Parent PID: %ld \n", (root->children + i)->name, (long) pid, (long) getpid());
+			
 		}
-
-		wait_for_ready_children(root->nr_children);
-		kill(getpid(), SIGSTOP);
+		
+		for(i = 0; i < root->nr_children; i++){
+			pid = wait(&status);
+			explain_wait_status(pid, status);
+		}
+		
+		printf("%s is exiting with PID: %ld  \n", root->name, (long) getpid());
+		exit(0);		
 	}
+	
+	else {
+		sleep(SLEEP_PROC_SEC);
+		printf("%s is exiting with PID: %ld  \n", root->name, (long) getpid());
+		exit(0);
+	}
+	
+
 }
 
 int main(int argc, char *argv[])
 {
 	struct tree_node *root;
+
+	int status;
 
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s <input_tree_file>\n\n", argv[0]);
@@ -51,8 +64,6 @@ int main(int argc, char *argv[])
 	}
 
 	root = get_tree_from_file(argv[1]);
-	print_tree(root);
-
 
 	pid_t p;
 
@@ -64,16 +75,16 @@ int main(int argc, char *argv[])
 	}
 	if(p == 0) {
 		forker(root);
-		kill(getpid(), SIGSTOP);
+		exit(0);
 	}
 	
-	printf("%s is initializing with PID: %ld and Parent PID: %ld \n", root->name, (long) p, (long) getpid());
 
 	sleep(SLEEP_TREE_SEC);
 	
-	wait_for_ready_children(1);
-
 	show_pstree(p);
+
+	p = wait(&status);
+	explain_wait_status(p, status);
 
 	return 0;
 }
