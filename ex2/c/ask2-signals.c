@@ -32,11 +32,10 @@ void fork_procs(struct tree_node *root)
 			
 		}
 
-		wait_for_ready_children(root->nr_children);
+		// wait_for_ready_children(root->nr_children);
 		raise(SIGSTOP);
 		
 		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
-		
 		int status;
 		for(i = 0; i < root->nr_children; i++){
 			kill(pid[i], SIGCONT);
@@ -46,8 +45,8 @@ void fork_procs(struct tree_node *root)
 		exit(0);
 	}
 
-	else {
 
+	else {
 		raise(SIGSTOP);
 				
 		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
@@ -97,7 +96,7 @@ int main(int argc, char *argv[])
 	 * Father
 	 */
 	/* for ask2-signals */
-	wait_for_ready_children(1);
+	// wait_for_ready_children(1);
 	
 	/* for ask2-{fork, tree} */
 	/* sleep(SLEEP_TREE_SEC); */
@@ -115,6 +114,22 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-/* 
+/* 1. Using signals enables us to time our commands with a specific order of execution 
+* without needing to estimate the time that or other processes need to execute commands,
+* or waste seconds just to be sure the orders will not overlap or execute prematurely,
+* as is the case with the use of sleep().
 * 
+* 2. We need the parent process to await for all its child processes to be stopped by a 
+* signal SIGSTOP, before continuing with the rest of the code. This can't be tracked by
+* the wait() function, since it can't identify when a child has been stopped. We can use
+* the waitpid() function with the WUNTRACED flag, so we can get feedback if a child has 
+* been stopped. This is, actually, the implementation of wait_for_ready_children() function
+* and so it is deemed as necessary, or else a for loop for each child with waitpid() function 
+* using the WUNTRACED flag can be used as a substitute, together with explain_wait_status().
+* 
+* If either of the 2 solutions is not present in the code, parent processes will not be able
+* to identify when each of their children have been stopped and will continue with the execution
+* of the rest of the program, meaning that show_pstree() might be called too soon, before all
+* of the children processes are created and stopped so that there is a frozen frame of the tree
+* with every process present.
 */
