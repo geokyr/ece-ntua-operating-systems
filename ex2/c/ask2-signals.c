@@ -9,57 +9,50 @@
 #include "tree.h"
 #include "proc-common.h"
 
-void forker(struct tree_node *root) {
-	
-	pid_t pid;
-	
+void fork_procs(struct tree_node *root)
+{
 	change_pname(root->name);
-
-	if(!root->children) {
-		raise(SIGSTOP);
-	}
-
-	else {
-		for(int i = 0; i < root->nr_children; i++){
-			pid = fork();
+	printf("PID = %ld, name = %s is initializing\n", (long)getpid(), root->name);
 	
-			if(pid < 0) {
+	
+	if(root->children) {
+		pid_t pid[root->nr_children];
+		int i;
+
+		for(i = 0; i < root->nr_children; i++){
+			pid[i] = fork();
+	
+			if(pid[i] < 0) {
 				perror("forker: fork");
 				exit(1);
 			}
-			if(pid == 0){
-				forker(root->children + i);
+			if(pid[i] == 0){
+				fork_procs(root->children + i);
 			}
-			printf("%s is initializing with PID: %ld.\n", (root->children + i)->name, (long) pid);
+			
 		}
 
 		wait_for_ready_children(root->nr_children);
 		raise(SIGSTOP);
+		
+		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
+		
+		int status;
+		for(i = 0; i < root->nr_children; i++){
+			kill(pid[i], SIGCONT);
+			pid[i] = wait(&status);
+			explain_wait_status(pid[i], status);
+		}
+		exit(0);
 	}
-}
 
-void fork_procs(struct tree_node *root)
-{
-	/*
-	 * Start
-	 */
-	change_pname(root->name);
-	printf("%s is initializing with PID: %ld.\n",
-			root->name, (long)getpid());
+	else {
 
-	/* ... */
-	forker(root);
-	
-	printf("PID = %ld, name = %s is awake\n",
-		(long)getpid(), root->name);
-
-	/* ... */
-	
-
-	/*
-	 * Exit
-	 */
-	exit(0);
+		raise(SIGSTOP);
+				
+		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
+		exit(0);
+	}
 }
 
 /*
@@ -88,7 +81,6 @@ int main(int argc, char *argv[])
 
 	/* Read tree into memory */
 	root = get_tree_from_file(argv[1]);
-
 	/* Fork root of process tree */
 	p = fork();
 	if (p < 0) {
@@ -122,3 +114,7 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+/* 
+* 
+*/
