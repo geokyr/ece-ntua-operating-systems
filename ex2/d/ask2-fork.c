@@ -11,16 +11,23 @@
 #define SLEEP_PROC_SEC  5
 #define SLEEP_TREE_SEC 	3
 
+//int pida;
+
 void forker(struct tree_node *root) {
 	
 	change_pname(root->name);
 	printf("%s is initializing with PID: %ld  \n", root->name, (long) getpid());
 
-	if(root->children) {
-		int status;
-		pid_t pid;
-		int i;
+	int pfd[2];
+	if (pipe(pfd) < 0) {
+		perror("pipe");
+		exit(1);
+	}
 
+	if(root->children) {
+		int status, i, value, dad, values[root->nr_children];
+		pid_t pid;
+		
 		for(i = 0; i < root->nr_children; i++){
 			pid = fork();
 
@@ -32,24 +39,58 @@ void forker(struct tree_node *root) {
 				forker(root->children + i);
 			}
 			
+			if (read(pfd[0], &value, sizeof(value))) {
+				perror("read from pipe");
+				exit(1);
+			}
+			values[i] = value;
+		}
+
+		if(root->name == '+'){
+			for(i = 0; i < root->nr_children; i++){
+				dad += values[i];
+			}
+		}
+
+		else {
+			for(i = 0; i < root->nr_children; i++){
+				dad *= values[i];
+			}
 		}
 		
+		if (write(pfd[1], &dad, sizeof(dad))) {
+			perror("write from pipe");
+			exit(1);
+		}
+
 		for(i = 0; i < root->nr_children; i++){
 			pid = wait(&status);
 			explain_wait_status(pid, status);
 		}
 		
+		printf("value: %d \n", dad);
+
+		// if(getpid() == pida) {
+		// 	printf("final value: %d \n", dad);
+		// }
+
 		printf("%s is exiting with PID: %ld  \n", root->name, (long) getpid());
 		exit(0);		
 	}
 	
 	else {
+		int value = atoi(root->name);
+		close(pfd[0]);
+
+		if (write(pfd[1], &value, sizeof(value))) {
+			perror("write from pipe");
+			exit(1);
+		}
+
 		sleep(SLEEP_PROC_SEC);
 		printf("%s is exiting with PID: %ld  \n", root->name, (long) getpid());
 		exit(0);
 	}
-	
-
 }
 
 int main(int argc, char *argv[])
@@ -66,6 +107,12 @@ int main(int argc, char *argv[])
 	root = get_tree_from_file(argv[1]);
 
 	pid_t p;
+	
+	int pfd[2];
+	if (pipe(pfd) < 0) {
+		perror("pipe");
+		exit(1);
+	}
 
 	p = fork();
 
@@ -77,7 +124,8 @@ int main(int argc, char *argv[])
 		forker(root);
 		exit(0);
 	}
-	
+
+	//pida = p;	
 
 	sleep(SLEEP_TREE_SEC);
 	
