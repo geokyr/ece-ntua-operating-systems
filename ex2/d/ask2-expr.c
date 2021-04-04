@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string.h>
 
 #include "tree.h"
 #include "proc-common.h"
@@ -15,19 +16,19 @@ pid_t p;
 
 void forker(struct tree_node *root) {
 	
-	//printf("PID: %ld is initializing. \n", (long) getpid());
+	printf("Process (name: %s) with PID: %d is created \n", root->name, getpid());
 
-	int status, i, dad;
-	char *value, *values[root->nr_children];
+	int status, i, dad, number, temp, numbers[root->nr_children];
 	pid_t pid;
+
+	int pfd[2];
+	if (pipe(pfd) < 0) {
+		perror("pipe");
+		exit(1);
+	}
 	
 	for(i = 0; i < root->nr_children; i++){
-		int pfd[2];
-		if (pipe(pfd) < 0) {
-			perror("pipe");
-			exit(1);
-		}
-		
+				
 		pid = fork();
 
 		if(pid < 0) {
@@ -39,61 +40,48 @@ void forker(struct tree_node *root) {
 				forker(root->children + i);
 			}
 			else {
-				close(pfd[0]);
-				if (write(pfd[1], &((root->children + i)->name), strlen((root->children + 1)->name))) {
-					perror("write from pipe");
+				number = strtol(((root->children + i)->name), (char **)NULL, 10);
+				printf("number: %d \n", number);
+				if (write(pfd[1], &number, sizeof(number)) != sizeof(number)) {
+					perror("write from pipe \n");
 					exit(1);
 				}
-				close(pfd[1]);
-				printf("Leaf with PID: %ld is exiting \n", getpid());
 				exit(0);
 			}
 		}
-		
-		wait_for_ready_children(1);
 
-		close(pfd[1]);
-		if (read(pfd[0], &value, strlen(value))) {
+		pid = wait(&status);
+		explain_wait_status(pid, status);
+
+		if (read(pfd[0], &temp, sizeof(temp)) != sizeof(temp)) {
 			perror("read from pipe");
 			exit(1);
 		}
-
-		
+		printf("temp: %d \n", temp);
+		numbers[i] = temp;
 	}
 
-	
-
-	else {
-		for(i = 0; i < root->nr_children; i++){
-			dad *= atoi(values[i]);
-		}
+	if(!strcmp(root->name, "+")) {
+		dad = numbers[0] + numbers[1];
 	}
-	
-	if (write(pfd[1], &dad, sizeof(dad))) {
+	else if(!strcmp(root->name, "*")) {
+		dad = numbers[0] * numbers[1];
+	}
+
+	if (write(pfd[1], &dad, sizeof(dad)) != sizeof(dad)) {
 		perror("write from pipe");
 		exit(1);
 	}
-
-	for(i = 0; i < root->nr_children; i++){
-		pid = wait(&status);
-		explain_wait_status(pid, status);
-	}
 	
-	printf("value: %d \n", dad);
+	printf("Value: %d. \n", dad);
 
 	if(getpid() == p) {
-		printf("final value: %d \n", dad);
+		printf("Final value: %d. \n", dad);
 	}
 
-	printf("PID: %ld is exiting. \n", (long) getpid());
+	printf("PID: %d is exiting. \n", getpid());
 	exit(0);		
 
-
-	// else {
-	// 	sleep(SLEEP_PROC_SEC);
-	// 	printf("PID: %ld is exiting. \n", (long) getpid());
-	// 	exit(0);
-	// }
 }
 
 int main(int argc, char *argv[])
@@ -109,12 +97,6 @@ int main(int argc, char *argv[])
 
 	root = get_tree_from_file(argv[1]);
 
-	// int pfd[2];
-	// if (pipe(pfd) < 0) {
-	// 	perror("pipe");
-	// 	exit(1);
-	// }
-
 	p = fork();
 
 	if(p < 0) {
@@ -127,7 +109,7 @@ int main(int argc, char *argv[])
 	}
 
 	sleep(SLEEP_TREE_SEC);
-	
+
 	show_pstree(p);
 
 	p = wait(&status);
