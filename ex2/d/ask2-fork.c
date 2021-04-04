@@ -12,7 +12,7 @@
 #define SLEEP_PROC_SEC  5
 #define SLEEP_TREE_SEC 	3
 
-int answer = 0, pfds[50][2];
+int pfds[50][2];
 
 void forker(struct tree_node *root, int level) {
 	
@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 {
 	struct tree_node *root;
 
+	pid_t p;
 	int status;
 
 	if (argc != 2) {
@@ -95,8 +96,6 @@ int main(int argc, char *argv[])
 	}
 
 	root = get_tree_from_file(argv[1]);
-
-	pid_t p;
 
 	p = fork();
 
