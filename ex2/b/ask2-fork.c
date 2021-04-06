@@ -11,7 +11,7 @@
 #define SLEEP_PROC_SEC  5
 #define SLEEP_TREE_SEC 	3
 
-void forker(struct tree_node *root) {
+void fork_procs(struct tree_node *root) {
 	
 	change_pname(root->name);
 	printf("%s is initializing with PID: %ld  \n", root->name, (long) getpid());
@@ -25,12 +25,12 @@ void forker(struct tree_node *root) {
 			pid = fork();
 
 			if(pid < 0) {
-				perror("forker: fork");
+				perror("fork_procs: fork");
 				exit(1);
 			}
 			else if(pid == 0){
 				/* Child calls the function recursively*/
-				forker(root->children + i);
+				fork_procs(root->children + i);
 			}
 		}
 		/* Parent waits for all its children */
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	}
 	if(p == 0) {
 		/* Root of given tree */
-		forker(root);
+		fork_procs(root);
 		exit(0);
 	}
 	

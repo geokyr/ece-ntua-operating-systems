@@ -107,6 +107,7 @@ int main(void)
 
 	/* Fork root of process tree */
 	pid = fork();
+	
 	if (pid < 0) {
 		perror("main: fork");
 		exit(1);
@@ -117,9 +118,7 @@ int main(void)
 		exit(1);
 	}
 
-	/*
-	 * Father
-	 */
+	/* Father */
 	/* for ask2-signals */
 	/* wait_for_ready_children(1); */
 
@@ -128,7 +127,7 @@ int main(void)
 
 	/* Print the process tree root at pid */
 	
-	show_pstree(getpid());
+	show_pstree(pid);
 	/* for ask2-signals */
 	/* kill(pid, SIGCONT); */
 

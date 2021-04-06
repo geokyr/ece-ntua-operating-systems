@@ -32,7 +32,7 @@ void fork_procs(struct tree_node *root)
 			
 		}
 
-		// wait_for_ready_children(root->nr_children);
+		wait_for_ready_children(root->nr_children);
 		raise(SIGSTOP);
 		
 		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 	root = get_tree_from_file(argv[1]);
 	/* Fork root of process tree */
 	p = fork();
+
 	if (p < 0) {
 		perror("main: fork");
 		exit(1);
@@ -92,11 +93,10 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	/*
-	 * Father
-	 */
+	/* Father */
 	/* for ask2-signals */
-	// wait_for_ready_children(1);
+	/* Waits for root process to be stopped by SIGSTOP */
+	wait_for_ready_children(1);
 	
 	/* for ask2-{fork, tree} */
 	/* sleep(SLEEP_TREE_SEC); */
@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
 	show_pstree(p);
 	
 	/* for ask2-signals */
+	/* Sends SIGCONT to root process */
 	kill(p, SIGCONT);
 
 	/* Wait for the root of the process tree to terminate */
