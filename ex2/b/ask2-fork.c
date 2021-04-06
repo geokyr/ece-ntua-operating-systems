@@ -29,27 +29,24 @@ void forker(struct tree_node *root) {
 				exit(1);
 			}
 			else if(pid == 0){
+				/* Child calls the function recursively*/
 				forker(root->children + i);
 			}
-			
 		}
-		
+		/* Parent waits for all its children */
 		for(i = 0; i < root->nr_children; i++){
 			pid = wait(&status);
 			explain_wait_status(pid, status);
 		}
-		
-		printf("%s is exiting with PID: %ld  \n", root->name, (long) getpid());
-		exit(0);		
+		/* Then exit */
+		exit(0);	
 	}
 	
 	else {
+		/* Leaves sleep for 5 seconds then exit */
 		sleep(SLEEP_PROC_SEC);
-		printf("%s is exiting with PID: %ld  \n", root->name, (long) getpid());
 		exit(0);
 	}
-	
-
 }
 
 int main(int argc, char *argv[])
@@ -66,23 +63,25 @@ int main(int argc, char *argv[])
 	root = get_tree_from_file(argv[1]);
 
 	pid_t p;
-
+	/* Fork root of process tree */
 	p = fork();
-
+	
 	if(p < 0) {
 		perror("main: fork");
 		exit(1);
 	}
 	if(p == 0) {
+		/* Root of given tree */
 		forker(root);
 		exit(0);
 	}
 	
-
 	sleep(SLEEP_TREE_SEC);
-	
+
+	/* Print the process tree root at pid */	
 	show_pstree(p);
 
+	/* Wait for the root of the process tree to terminate */
 	p = wait(&status);
 	explain_wait_status(p, status);
 
@@ -90,12 +89,15 @@ int main(int argc, char *argv[])
 }
 
 
-/* 1. Initialization messages are printed by breadth, meaning that all processes of current level (A) 
-* print the initialization message before the ones in the next level (B, C, D) and the final initialization
-* messages are the ones of the final level (E, F). 
+/* 1. Processes are created by breadth, showcased by their PIDs, but initialization messages are not always
+* printed by breadth, since its random depending on the order the kernel executes the processes. By breadth 
+* means that all processes of current level (A) are created before the ones in the next level (B, C, D) and 
+* the last ones created are the ones of the final level (E, F). 
 * 
-* Exit messages have a similar principle. More specifically, the first exit messages are printed from the 
-* lowest level leaf processes (C, D), then the leafs of the higher level (E, F). Afterwards, B, the 
-* father of E and F, exits through the wait_for_ready_children() function. Finally, A, whose all children
-* processes are terminated, exits in a similar way.
+* Exit messages are printed starting from the leaves that get executed and exit first, followed by their parent
+* processes and their parent's parent processes. More specifically, the first exit messages are printed from the
+* leaf processes (in some cases C, D) that get executed first according to the initialization messages. Then
+* follow the leaves that are executed after (in some cases E, F) and then their fathers, assuming they don't have
+* any other active process and waiting for it to exit (B, the father of E and F) and then A, since B, C and D have
+* exited).
 */
