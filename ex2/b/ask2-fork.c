@@ -16,6 +16,7 @@ void fork_procs(struct tree_node *root) {
 	change_pname(root->name);
 	printf("%s is initializing with PID: %ld  \n", root->name, (long) getpid());
 
+	/* Parent processes with children */
 	if(root->children) {
 		int status;
 		pid_t pid;
@@ -42,6 +43,7 @@ void fork_procs(struct tree_node *root) {
 		exit(0);	
 	}
 	
+	/* Leaves with no children */
 	else {
 		/* Leaves sleep for 5 seconds then exit */
 		sleep(SLEEP_PROC_SEC);

@@ -14,8 +14,9 @@ void fork_procs(struct tree_node *root)
 	change_pname(root->name);
 	printf("PID = %ld, name = %s is initializing\n", (long)getpid(), root->name);
 	
-	
+	/* Parent processes with children */
 	if(root->children) {
+		/* Create an array of children's PIDs for later use */
 		pid_t pid[root->nr_children];
 		int i;
 
@@ -27,28 +28,37 @@ void fork_procs(struct tree_node *root)
 				exit(1);
 			}
 			if(pid[i] == 0){
+				/* Child calls the function recursively*/
 				fork_procs(root->children + i);
 			}
 			
 		}
-
+		/* Parent waits for all its children */
 		wait_for_ready_children(root->nr_children);
+		/* Raises SIGSTOP when all children are stopped */
 		raise(SIGSTOP);
 		
+		/* Awakes when he receives SIGCONT from his parent */
 		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
 		int status;
+
+		/* Awakes all its children one by one with use of kill(pid[i], SIGCONT) 
+		and the array of their PIDs, and waits for them to exit */
 		for(i = 0; i < root->nr_children; i++){
 			kill(pid[i], SIGCONT);
 			pid[i] = wait(&status);
 			explain_wait_status(pid[i], status);
 		}
+		/* Then exits himself */
 		exit(0);
 	}
 
-
+	/* Leaves with no children */
 	else {
+		/* Leaves raise SIGSTOP */
 		raise(SIGSTOP);
-				
+
+		/* Leaves receive SIGCONT from parent process, are awaken then exit */
 		printf("PID = %ld, name = %s is awake\n", (long)getpid(), root->name);
 		exit(0);
 	}
@@ -116,7 +126,7 @@ int main(int argc, char *argv[])
 }
 
 /* 1. Using signals enables us to time our commands with a specific order of execution 
-* without needing to estimate the time that or other processes need to execute commands,
+* without needing to estimate the time this or other processes need to execute commands,
 * or waste seconds just to be sure the orders will not overlap or execute prematurely,
 * as is the case with the use of sleep().
 * 
@@ -130,7 +140,11 @@ int main(int argc, char *argv[])
 * 
 * If either of the 2 solutions is not present in the code, parent processes will not be able
 * to identify when each of their children have been stopped and will continue with the execution
-* of the rest of the program, meaning that show_pstree() might be called too soon, before all
-* of the children processes are created and stopped so that there is a frozen frame of the tree
-* with every process present.
+* of the rest of the program, meaning that show_pstree() might be called too soon (with a PID 
+* between root process and the rest of its children), before all of the children processes are 
+* created and stopped so that there is a frozen frame of the tree with every process present.
+* In addition, no "stopped by a signal" messages are displayed on the terminal, since these
+* were caught by the wait_for_ready_children function. The rest of the program, though, remains
+* functioning as expected, awake messages are printed in a DFS order and the all of the messages
+* (except the ones mentioned) are printed as anticipated.
 */
