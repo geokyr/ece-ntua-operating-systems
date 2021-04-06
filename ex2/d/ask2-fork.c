@@ -12,9 +12,11 @@
 #define SLEEP_PROC_SEC  5
 #define SLEEP_TREE_SEC 	3
 
-int pfds[50][2];
+/* Global arrays to store child pipes and father pipes */
+int child[2];
+int father[2];
 
-void forker(struct tree_node *root, int level) {
+void fork_procs(struct tree_node *root) {
 	
 	change_pname(root->name);
 	printf("Process (name: %s) with PID: %d is created.\n", root->name, getpid());
@@ -22,43 +24,53 @@ void forker(struct tree_node *root, int level) {
 	int status, i, dad, number, temp, numbers[root->nr_children];
 	pid_t pid;
 
+	/* Father processes with children */
 	if(root->children) {
+		/* Store father's file descriptors before initiating new child pipe*/
+		father[0] = child[0];
+		father[1] = child[1];
 		
-		int pfd[2];
-		if (pipe(pfd) < 0) {
+		/* Create pipe between this process and its children */
+		if (pipe(child) < 0) {
 			perror("pipe\n");
 			exit(1);
 		}
-		pfds[level + 1][0] = pfd[0];
-		pfds[level + 1][1] = pfd[1];
 
+		/* Create children processes */
 		for(i = 0; i < root->nr_children; i++){
 			pid = fork();
 
 			if(pid < 0) {
-				perror("forker: fork\n");
+				perror("fork_procs: fork\n");
 				exit(1);
 			}
 			else if(pid == 0){
-				forker(root->children + i, level + 1);
+				/* Child calls the function recursively*/
+				fork_procs(root->children + i);
 			}
-
-			if (read(pfds[level + 1][0], &temp, sizeof(temp)) != sizeof(temp)) {
+			
+			/* Father */
+			/* Awaits and eventually reads child's value from its pipe */
+			if (read(child[0], &temp, sizeof(temp)) != sizeof(temp)) {
 				perror("read from pipe\n");
 				exit(1);
 			}
+			/* Stores the values of each child into an array for later calculations */
 			numbers[i] = temp;
-
+			
+			/* If it has read both children's value it can close its read end */
 			if(i == 1) {
-				close(pfds[level + 1][0]);
+				close(child[0]);
 			}
 		}
 
+		/* Father waits for all its children to exit*/
 		for(i = 0; i < root->nr_children; i++){
 			pid = wait(&status);
 			explain_wait_status(pid, status);			
 		}
-
+		/* Check if we should add or multiply children's values and calculate 
+		value to be written on father pipe*/
 		if (!strcmp(root->name, "+")) {
 			dad = numbers[0] + numbers[1];
 		}
@@ -66,28 +78,32 @@ void forker(struct tree_node *root, int level) {
 			dad = numbers[0] * numbers[1];
 		}
 
-		if (write(pfds[level][1], &dad, sizeof(dad)) != sizeof(dad)) {
+		/* Write value on father pipe */
+		if (write(father[1], &dad, sizeof(dad)) != sizeof(dad)) {
 			perror("write from pipe\n");
 			exit(1);
 		}
-		close(pfds[level][1]);
-
+		/* Close write end, since the value has been written */
+		close(father[1]);
+		/* Then exit */
 		exit(0);		
 	}
 	
 	else {
-		close(pfds[level][0]);
+		/* Close child pipe read end, since a leaf doesn't use it */
+		close(child[0]);
+		/* Convert char * to integer and write on child pipe*/
 		number = atoi(root->name);
-		if (write(pfds[level][1], &number, sizeof(number)) != sizeof(number)) {
+		if (write(child[1], &number, sizeof(number)) != sizeof(number)) {
 			perror("write from pipe\n");
 			exit(1);
 		}
-		close(pfds[level][1]);
-
+		/* Close child pipe write end, since the value has been written */
+		close(child[1]);
+		/* Then exit */
 		exit(0);
 	}
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -101,16 +117,16 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	/* Read tree into memory */
 	root = get_tree_from_file(argv[1]);
 
-	int pfd[2];
-	if (pipe(pfd) < 0) {
+	/* Create pipe between ask2-fork(main) and root process */
+	if (pipe(child) < 0) {
 		perror("pipe\n");
 		exit(1);
 	}
-	pfds[0][0] = pfd[0];
-	pfds[0][1] = pfd[1];
-
+	
+	/* Fork root of process tree */
 	p = fork();
 
 	if(p < 0) {
@@ -118,14 +134,21 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	if(p == 0) {
-		forker(root, 0);
+		/* Child */
+		fork_procs(root);
 		exit(0);
 	}
 
+	/* Father */
+	/* Close write end, since it only reads the final answer */
+	close(child[1]);
+
+	/* Wait for the root of the process tree to terminate */
 	p = wait(&status);
 	explain_wait_status(p, status);
 
-	if (read(pfds[0][0], &answer, sizeof(answer)) != sizeof(answer)) {
+	/* Read the final answer from the pipe and print it */
+	if (read(child[0], &answer, sizeof(answer)) != sizeof(answer)) {
 		perror("read from pipe\n");
 		exit(1);
 	}
@@ -133,3 +156,18 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+
+/* 1. We used 1 pipe per process with 2 arrays to store both child's pipe file 
+* descriptors and father's pipe file descriptors, so that we have access at
+* both, at all times. It works because when a process is forked, its child
+* receives a copy of the process' data, including a copy of its pipes and file
+* descriptors. Therefore, both children have access to the same pipe that enables
+* them to write back to their father process. +++
+*
+* 2. Since we have multiple processors, we can use more than one of them at a time
+* to parallelly calculate the values of a tree. This way, the time it takes to
+* evaluate the value of the expression is significantly decreased compared to 
+* evaluating it with only a processor and sequentially, because more calculations
+* are performed per time unit.
+*/

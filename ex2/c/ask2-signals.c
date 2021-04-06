@@ -33,7 +33,8 @@ void fork_procs(struct tree_node *root)
 			}
 			
 		}
-		/* Parent waits for all its children */
+		/* Father */
+		/* Father waits for all its children to be stopped */
 		wait_for_ready_children(root->nr_children);
 		/* Raises SIGSTOP when all children are stopped */
 		raise(SIGSTOP);
