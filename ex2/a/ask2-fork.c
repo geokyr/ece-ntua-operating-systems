@@ -10,22 +10,17 @@
 #define SLEEP_PROC_SEC  10
 #define SLEEP_TREE_SEC  3
 
-/*
- * Create this process tree:
- * A-+-B---D
- *   `-C
+/* Create this process tree:
+ * A---|---B----D
+ *     |---C
  */
-
+ 
 void fork_procs(void)
 {
-	/*
-	 * initial process is A.
-	 */
-
+	/* Initial process is A */
 	printf("A: Initiating...\n");
 	change_pname("A");
 
-	/* ... */
 	pid_t pidB, pidC, pidD;
 	int status;
 
@@ -83,22 +78,8 @@ void fork_procs(void)
 	pidB = wait(&status);
 	explain_wait_status(pidB, status);
 
-	/* ... */
 	exit(16);
 }
-
-/*
- * The initial process forks the root of the process tree,
- * waits for the process tree to be completely created,
- * then takes a photo of it using show_pstree().
- *
- * How to wait for the process tree to be ready?
- * In ask2-{fork, tree}:
- *      wait for a few seconds, hope for the best.
- * In ask2-signals:
- *      use wait_for_ready_children() to wait until
- *      the first process raises SIGSTOP.
- */
 
 int main(void)
 {
@@ -119,17 +100,10 @@ int main(void)
 	}
 
 	/* Father */
-	/* for ask2-signals */
-	/* wait_for_ready_children(1); */
-
-	/* for ask2-{fork, tree} */
 	sleep(SLEEP_TREE_SEC);
 
 	/* Print the process tree root at pid */
-	
 	show_pstree(pid);
-	/* for ask2-signals */
-	/* kill(pid, SIGCONT); */
 
 	/* Wait for the root of the process tree to terminate */
 	pid = wait(&status);

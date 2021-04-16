@@ -12,8 +12,6 @@
 #define SLEEP_PROC_SEC  5
 #define SLEEP_TREE_SEC 	3
 
-/* Global arrays to store child pipes and father pipes */
-
 void fork_procs(struct tree_node *root, int father[]) {
 	
 	change_pname(root->name);
@@ -43,14 +41,15 @@ void fork_procs(struct tree_node *root, int father[]) {
 				exit(1);
 			}
 			else if(pid == 0){
-				/* Child calls the function recursively*/
+				/* Child calls the function recursively with the file descriptors
+				for child to parent communication */
 				fork_procs(root->children + i, child);
 			}
 		}
 
 		/* Father */
 		for(int i = 0; i < 2; i++) {
-			/* Awaits and eventually reads child's value from its pipe */
+			/* Awaits and eventually reads child's value from their pipe */
 			if (read(child[0], &temp, sizeof(temp)) != sizeof(temp)) {
 				perror("read from pipe\n");
 				exit(1);
@@ -66,7 +65,7 @@ void fork_procs(struct tree_node *root, int father[]) {
 		}
 
 		/* Check if we should add or multiply children's values and calculate 
-		value to be written on father pipe*/
+		value to be written on father's pipe*/
 		if (!strcmp(root->name, "+")) {
 			dad = numbers[0] + numbers[1];
 		}
@@ -74,27 +73,28 @@ void fork_procs(struct tree_node *root, int father[]) {
 			dad = numbers[0] * numbers[1];
 		}
 
-		/* Write value on father pipe */
+		/* Write value on father's pipe */
 		if (write(father[1], &dad, sizeof(dad)) != sizeof(dad)) {
 			perror("write from pipe\n");
 			exit(1);
 		}
-		/* Close write end, since the value has been written */
+		/* Close the write end, since the value has been written */
 		close(father[1]);
 		/* Then exit */
 		exit(0);		
 	}
 	
 	else {
-		/* Close father pipe read end, since a leaf doesn't use it */
+		/* Close father's pipe read end, since a leaf doesn't use it */
 		close(father[0]);
-		/* Convert char * to integer and write on father pipe*/
+
+		/* Convert char * to integer and write on father's pipe*/
 		number = atoi(root->name);
 		if (write(father[1], &number, sizeof(number)) != sizeof(number)) {
 			perror("write from pipe\n");
 			exit(1);
 		}
-		/* Close father pipe write end, since the value has been written */
+		/* Close father's pipe write end, since the value has been written */
 		close(father[1]);
 		/* Then exit */
 		exit(0);
@@ -116,9 +116,8 @@ int main(int argc, char *argv[])
 	/* Read tree into memory */
 	root = get_tree_from_file(argv[1]);
 
-	int child[2];
-
 	/* Create pipe between ask2-fork(main) and root process */
+	int child[2];
 	if (pipe(child) < 0) {
 		perror("pipe\n");
 		exit(1);
@@ -141,7 +140,7 @@ int main(int argc, char *argv[])
 	/* Close write end, since it only reads the final answer */
 	close(child[1]);
 
-	/* Read the final answer from the pipe and print it */
+	/* Await and eventually read the final answer from the pipe and print it */
 	if (read(child[0], &answer, sizeof(answer)) != sizeof(answer)) {
 		perror("read from pipe\n");
 		exit(1);

@@ -34,7 +34,7 @@ void fork_procs(struct tree_node *root)
 			
 		}
 		/* Father */
-		/* Father waits for all its children to be stopped */
+		/* Waits for all its children to be stopped */
 		wait_for_ready_children(root->nr_children);
 		/* Raises SIGSTOP when all children are stopped */
 		raise(SIGSTOP);
@@ -65,19 +65,6 @@ void fork_procs(struct tree_node *root)
 	}
 }
 
-/*
- * The initial process forks the root of the process tree,
- * waits for the process tree to be completely created,
- * then takes a photo of it using show_pstree().
- *
- * How to wait for the process tree to be ready?
- * In ask2-{fork, tree}:
- *      wait for a few seconds, hope for the best.
- * In ask2-signals:
- *      use wait_for_ready_children() to wait until
- *      the first process raises SIGSTOP.
- */
-
 int main(int argc, char *argv[])
 {
 	pid_t p;
@@ -91,6 +78,7 @@ int main(int argc, char *argv[])
 
 	/* Read tree into memory */
 	root = get_tree_from_file(argv[1]);
+
 	/* Fork root of process tree */
 	p = fork();
 
@@ -105,17 +93,11 @@ int main(int argc, char *argv[])
 	}
 
 	/* Father */
-	/* for ask2-signals */
-	/* Waits for root process to be stopped by SIGSTOP */
 	wait_for_ready_children(1);
-	
-	/* for ask2-{fork, tree} */
-	/* sleep(SLEEP_TREE_SEC); */
 
 	/* Print the process tree root at pid */
 	show_pstree(p);
 	
-	/* for ask2-signals */
 	/* Sends SIGCONT to root process */
 	kill(p, SIGCONT);
 
@@ -141,11 +123,10 @@ int main(int argc, char *argv[])
 * 
 * If either of the 2 solutions is not present in the code, parent processes will not be able
 * to identify when each of their children have been stopped and will continue with the execution
-* of the rest of the program, meaning that show_pstree() might be called too soon (with a PID 
-* between root process and the rest of its children), before all of the children processes are 
-* created and stopped so that there is a frozen frame of the tree with every process present.
-* In addition, no "stopped by a signal" messages are displayed on the terminal, since these
-* were caught by the wait_for_ready_children function. The rest of the program, though, remains
-* functioning as expected, awake messages are printed in a DFS order and the all of the messages
-* (except the ones mentioned) are printed as anticipated.
+* of the rest of the program, meaning that show_pstree() might be called too soon, before all of
+* the children processes are created and stopped so that there is a frozen frame of the tree with
+* every process present. In addition, no "stopped by a signal" messages are displayed on the
+* terminal, since these were caught by the wait_for_ready_children function. The rest of the 
+* program, though, remains functioning as expected, awake messages are printed in a DFS order and 
+* all of the messages, except the ones mentioned, are printed as anticipated.
 */
