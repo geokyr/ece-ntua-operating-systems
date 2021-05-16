@@ -36,12 +36,11 @@
 # define USE_ATOMIC_OPS 0
 #endif
 
-// pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *increase_fn(void *arg)
 {
-	int i;
+	int i, ret;
 	volatile int *ip = arg;
 	
 	fprintf(stderr, "About to increase variable %d times\n", N);
@@ -49,27 +48,21 @@ void *increase_fn(void *arg)
 		if (USE_ATOMIC_OPS) {
 			/* ... */
 			/* You can modify the following line */
-			__sync_add_and_fetch(&ip, 1);
-			if(!ip) {
-				perror("sync_add_and_fetch");
-				exit(1);
-			}
+			__sync_add_and_fetch(ip, 1);
 			/* ... */
 		} else {
 			/* ... */
-			//pthread_mutex_lock(&mutex);
-			int ret1 = pthread_mutex_lock(&mutex);
-			if (ret1) {
-				perror_pthread(ret1, "pthread_mutex_lock");
+			ret = pthread_mutex_lock(&mutex);
+			if (ret) {
+				perror_pthread(ret, "pthread_mutex_lock");
 				exit(1);
 			}
 			/* You cannot modify the following line */
 			++(*ip);
 			/* ... */
-			//pthread_mutex_unlock(&mutex);
-			int ret2 = pthread_mutex_unlock(&mutex);
-			if (ret2) {
-				perror_pthread(ret2, "pthread_mutex_unlock");
+			ret = pthread_mutex_unlock(&mutex);
+			if (ret) {
+				perror_pthread(ret, "pthread_mutex_unlock");
 				exit(1);
 			}
 		}
@@ -81,40 +74,29 @@ void *increase_fn(void *arg)
 
 void *decrease_fn(void *arg)
 {
-	int i;
+	int i, ret;
 	volatile int *ip = arg;
-
-	if (pthread_mutex_init(&mutex, NULL) != 0) {
-        printf("\n mutex init has failed\n");
-        exit(1);
-    }
 
 	fprintf(stderr, "About to decrease variable %d times\n", N);
 	for (i = 0; i < N; i++) {
 		if (USE_ATOMIC_OPS) {
 			/* ... */
 			/* You can modify the following line */
-			__sync_sub_and_fetch(&ip, -5);
-			if(!ip) {
-				perror("sync_sub_and_fetch");
-				exit(1);
-			}
+			__sync_sub_and_fetch(ip, 1);
 			/* ... */
 		} else {
 			/* ... */
-			// pthread_mutex_lock(&mutex);
-			int ret1 = pthread_mutex_lock(&mutex);
-			if (ret1) {
-				perror_pthread(ret1, "pthread_mutex_lock");
+			ret = pthread_mutex_lock(&mutex);
+			if (ret) {
+				perror_pthread(ret, "pthread_mutex_lock");
 				exit(1);
 			}
 			/* You cannot modify the following line */
 			--(*ip);
 			/* ... */
-			//pthread_mutex_unlock(&mutex);
-			int ret2 = pthread_mutex_unlock(&mutex);
-			if (ret2) {
-				perror_pthread(ret2, "pthread_mutex_unlock");
+			ret = pthread_mutex_unlock(&mutex);
+			if (ret) {
+				perror_pthread(ret, "pthread_mutex_unlock");
 				exit(1);
 			}
 		}
@@ -171,54 +153,56 @@ int main(int argc, char *argv[])
 
 /* 1.
 	Με συγχρονισμό:
-		george@George:~/oslab/ex3$ time ./simplesync-mutex
+		
+		oslaba40@os-node1:~/ex3$ time ./simplesync-atomic
 		About to increase variable 10000000 times
 		About to decrease variable 10000000 times
 		Done decreasing variable.
 		Done increasing variable.
 		OK, val = 0.
 
-		real    0m0.864s
-		user    0m1.195s
-		sys     0m0.488s
-
-		george@George:~/oslab/ex3$ time ./simplesync-atomic
+		real    0m0.421s
+		user    0m0.832s
+		sys     0m0.004s
+	
+		oslaba40@os-node1:~/ex3$ time ./simplesync-mutex
 		About to increase variable 10000000 times
 		About to decrease variable 10000000 times
-		Done decreasing variable.
 		Done increasing variable.
+		Done decreasing variable.
 		OK, val = 0.
 
-		real    0m0.133s
-		user    0m0.233s
-		sys     0m0.020s
-
+		real    0m26.772s
+		user    0m27.092s
+		sys     0m26.440s
+	
 	Χωρίς συγχρονισμό:
-		george@George:~/oslab/ex3$ time ./simplesync-mutex
+
+		oslaba40@os-node1:~/ex3$ time ./simplesync-atomic
 		About to increase variable 10000000 times
 		About to decrease variable 10000000 times
-		Done decreasing variable.
 		Done increasing variable.
-		NOT OK, val = -922775.
+		Done decreasing variable.
+		NOT OK, val = -3374558.
 
-		real    0m0.026s
-		user    0m0.042s
-		sys     0m0.001s
+		real    0m0.039s
+		user    0m0.072s
+		sys     0m0.000s
 
-		george@George:~/oslab/ex3$ time ./simplesync-atomic
+		oslaba40@os-node1:~/ex3$ time ./simplesync-mutex
 		About to increase variable 10000000 times
 		About to decrease variable 10000000 times
-		Done decreasing variable.
 		Done increasing variable.
-		NOT OK, val = 2361942.
+		Done decreasing variable.
+		NOT OK, val = -9991389.
 
-		real    0m0.028s
-		user    0m0.036s
-		sys     0m0.001s
+		real    0m0.039s
+		user    0m0.072s
+		sys     0m0.000s
 
 	Παρατηρούμε πως ο χρόνος που απαιτούν τα εκτελέσιμα με συγχρονισμό είναι μεγαλύτερος
 	από αυτόν που απαιτούν τα εκτελέσιμα χωρίς συγχρονισμό, καθώς στην υλοποίηση με
-	συγχρονισμό, υπάρχει η καθυστέρηση που προκαλείται είτε από τον αμοιβαίο αποκλεισμό 
+	συγχρονισμό, υπάρχει η καθυστέρηση που προκαλείται είτε από την ενεργό αναμονή 
 	είτε από τις κλήσεις συστήματος, αφού έχουμε μόνο ένα νήμα κάθε φορά σε κάθε κρίσιμο
 	τμήμα του κώδικα, σε αντίθεση με την περίπτωση που δεν έχουμε συγχρονισμό και όλα
 	τα νήματα μπορούν να έχουν πρόσβαση στο κρίσιμο τμήμα ταυτόχρονα.
