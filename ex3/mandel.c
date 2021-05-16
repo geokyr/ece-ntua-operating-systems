@@ -11,6 +11,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <semaphore.h>
 
 #include "mandel-lib.h"
 
@@ -39,6 +40,55 @@ double ymin = -1.0, ymax = 1.0;
  */
 double xstep;
 double ystep;
+
+int thrcnt = 3;
+sem_t *mutex;
+
+/*
+ * A (distinct) instance of this structure
+ * is passed to each thread
+ */
+struct thread_info_struct {
+	pthread_t tid; /* POSIX thread id, as returned by the library */
+	int *color_val; /* Pointer to array to manipulate, used to hold
+					 * color values for the line being drawn */
+	int thrid; /* Application-defined thread id */
+};
+
+int safe_atoi(char *s, int *val)
+{
+	long l;
+	char *endp;
+
+	l = strtol(s, &endp, 10);
+	if (s != endp && *endp == '\0') {
+		*val = l;
+		return 0;
+	} else
+		return -1;
+}
+
+void *safe_malloc(size_t size)
+{
+	void *p;
+
+	if ((p = malloc(size)) == NULL) {
+		fprintf(stderr, "Out of memory, failed to allocate %zd bytes\n",
+			size);
+		exit(1);
+	}
+
+	return p;
+}
+
+void usage(char *argv0)
+{
+	fprintf(stderr, "Usage: %s thread_count \n\n"
+		"Exactly one argument required:\n"
+		"    thread_count: The number of threads to create.\n",
+		argv0);
+	exit(1);
+}
 
 /*
  * This function computes a line of output
@@ -98,30 +148,77 @@ void output_mandel_line(int fd, int color_val[])
 	}
 }
 
-void compute_and_output_mandel_line(int fd, int line)
-{
-	/*
-	 * A temporary array, used to hold color values for the line being drawn
-	 */
-	int color_val[x_chars];
-
-	compute_mandel_line(line, color_val);
-	output_mandel_line(fd, color_val);
+void *compute_and_output_mandel_line(void *arg)
+{	
+	int i;
+	/* We know arg points to an instance of thread_info_struct */
+	struct thread_info_struct *thr = arg;
+	
+	for (i = thr->thrid; i < y_chars; i += thrcnt){
+		int current = i % thrcnt;
+		int next = (i + 1) % thrcnt;
+		
+		compute_mandel_line(i, thr->color_val);
+		sem_wait(&mutex[current]);
+		
+		output_mandel_line(1, thr->color_val);
+		sem_post(&mutex[next]);
+	}
+	return NULL;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
-	int line;
+	int i, line, ret;
+	struct thread_info_struct *thr;
 
+	if (argc != 2) {
+		usage(argv[0]);
+	}
+	if (safe_atoi(argv[1], &thrcnt) < 0 || thrcnt <= 0) {
+		fprintf(stderr, "`%s' is not valid for `thread_count'\n", argv[1]);
+		exit(1);
+	}
+	
 	xstep = (xmax - xmin) / x_chars;
 	ystep = (ymax - ymin) / y_chars;
 
+	thr = safe_malloc(thrcnt * sizeof(*thr));
+	mutex = safe_malloc(thrcnt * sizeof(sem_t));
+
+	for(i = 0; i < thrcnt; i++) {
+		/* Initialize per-thread structure */
+		thr[i].thrid = i;
+		thr[i].color_val = safe_malloc(x_chars * sizeof(int));
+
+		if(i == 0) {
+			sem_init(&mutex[i], 0, 1);
+		}
+		else{
+			sem_init(&mutex[i], 0, 0);
+		}
+		
+		/* Spawn new thread */
+		ret = pthread_create(&thr[i].tid, NULL, compute_and_output_mandel_line, &thr[i]);
+		if (ret) {
+			perror_pthread(ret, "pthread_create");
+			exit(1);
+		}
+	}
+
 	/*
-	 * draw the Mandelbrot Set, one line at a time.
-	 * Output is sent to file descriptor '1', i.e., standard output.
+	 * Wait for all threads to terminate
 	 */
-	for (line = 0; line < y_chars; line++) {
-		compute_and_output_mandel_line(1, line);
+	for (i = 0; i < thrcnt; i++) {
+		ret = pthread_join(thr[i].tid, NULL);
+		if (ret) {
+			perror_pthread(ret, "pthread_join");
+			exit(1);
+		}
+	}
+
+	for(i = 0; i < thrcnt; i++) {
+		sem_destroy(&mutex[i]);
 	}
 
 	reset_xterm_color(1);
