@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 	macro (-D[name]) να διαλέξουμε για κάθε αρχείο τους μηχανισμούς εκτέλεσης του 
 	κώδικα μας, με βάση τα if conditions και το flag USE_ATOMIC_OPS. Αυτό λαμβάνει
 	τιμή 1 εάν έχουμε ορίσει ως macro το SYNC_ATOMIC και τιμή 0 εάν έχουμε ορίσει ως
-	macro το SYNC_MUTEX, μέσω της εντολής -DSYNC_[ATOMIC,MUTEX] μέσα στο Makefile μας.
+	macro το SYNC_MUTEX, μέσω της εντολής -DSYNC_{ATOMIC,MUTEX} μέσα στο Makefile μας.
 
 	1.
 	Με συγχρονισμό:
