@@ -217,4 +217,31 @@ int main(int argc, char *argv[])
 	πρώτη που χρησιμοποιεί μόνο απλές εντολές Assembly χωρίς να αναστέλει και να ξυπνάει
 	τα νήματα.
 
+	3.
+	Για να δημιουργήσουμε το αρχείο Assembly χρησιμοποιούμε την εντολή:
+		oslaba40@os-node1:~/ex3$ gcc -Wall -O2 -pthread -DSYNC_ATOMIC -S -g -o simplesync-atomic.s simplesync.c
+	
+	Για την ατομική λειτουργία __sync_add_and_fetch(ip, 1):
+	
+		.loc 1 51 4 view .LVU17
+		lock addl	$1, (%rbx)
+
+	Για την ατομική λειτουργία __sync_sub_and_fetch(ip, 1):
+	
+		.loc 1 85 4 view .LVU47
+		lock subl	$1, (%rbx)
+
+	4.
+	Για να δημιουργήσουμε το αρχείο Assembly χρησιμοποιούμε την εντολή:
+		oslaba40@os-node1:~/ex3$ gcc -Wall -O2 -pthread -DSYNC_MUTEX -S -g -o simplesync-mutex.s simplesync.c
+
+	Για τα δύο σημεία που καλούμε την λειτουργία pthread_mutex_lock():
+
+		.loc 1 55 10 is_stmt 0 view .LVU22
+		movq	%r13, %rdi
+		call	pthread_mutex_lock@PLT
+		
+		.loc 1 89 10 is_stmt 0 view .LVU81
+		movq	%r13, %rdi
+		call	pthread_mutex_lock@PLT
 */
