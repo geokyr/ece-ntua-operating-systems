@@ -224,3 +224,7 @@ int main(int argc, char **argv)
 	reset_xterm_color(1);
 	return 0;
 }
+
+
+/*	1.
+	Χρειαζόμαστε πλήθος σημαφόρων ίσο με τον αριθμό των νημάτων (thrcnt).
