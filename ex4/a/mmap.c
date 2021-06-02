@@ -62,7 +62,7 @@ void child(void)
 	 */
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
-		printf("Child: %lu\n", pa);
+		printf("Child: 0x%lu\n", pa);
 	}
 
 	/*
@@ -80,7 +80,7 @@ void child(void)
 	
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
-		printf("Child: %lu\n", pa);
+		printf("Child: 0x%lu\n", pa);
 	}
 
 	/*
@@ -97,7 +97,7 @@ void child(void)
 	
 	pa = get_physical_address((uint64_t)heap_shared_buf);
 	if(pa) {
-		printf("Child: %lu\n", pa);
+		printf("Child: 0x%lu\n", pa);
 	}
 
 	/*
@@ -183,7 +183,7 @@ void parent(pid_t child_pid)
 	 */
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
-		printf("Parent: %lu\n", pa);
+		printf("Parent: 0x%lu\n", pa);
 	}
 
 	if (-1 == kill(child_pid, SIGCONT))
@@ -205,7 +205,7 @@ void parent(pid_t child_pid)
 	 */
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
-		printf("Parent: %lu\n", pa);
+		printf("Parent: 0x%lu\n", pa);
 	}
 
 	if (-1 == kill(child_pid, SIGCONT))
@@ -228,7 +228,7 @@ void parent(pid_t child_pid)
 	 */
 	pa = get_physical_address((uint64_t)heap_shared_buf);
 	if(pa) {
-		printf("Parent: %lu\n", pa);
+		printf("Parent: 0x%lu\n", pa);
 	}
 
 	if (-1 == kill(child_pid, SIGCONT))
@@ -327,7 +327,7 @@ int main(void)
 	/*
 	 * Step 3: Find the physical address of the first page of your buffer
 	 * in main memory. What do you see?
-	 */
+	a */
 	printf(RED "\nStep 3: Find and print the physical address of the "
 		"buffer in main memory. What do you see?\n" RESET);
 	press_enter();
@@ -336,7 +336,7 @@ int main(void)
 	 */
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
-		printf("%lu\n", pa);
+		printf("0x%lu\n", pa);
 	}
 	/*
 	 * Step 4: Write zeros to the buffer and repeat Step 3.
@@ -354,7 +354,7 @@ int main(void)
 	
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
-		printf("%lu\n", pa);
+		printf("0x%lu\n", pa);
 	}
 
 	/*
