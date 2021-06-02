@@ -244,9 +244,9 @@ int main(int argc, char **argv)
 	for(line = 0; line < nprocs; line++) {
 		sem_destroy(&mutex[line]);
 	}
-
-	destroy_shared_memory_area(mutex, nprocs * sizeof(sem_t));
 	
+	destroy_shared_memory_area(mutex, nprocs * sizeof(sem_t));
+
 	/*
 	 * draw the Mandelbrot Set, one line at a time.
 	 * Output is sent to file descriptor '1', i.e., standard output.

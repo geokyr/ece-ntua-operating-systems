@@ -133,6 +133,7 @@ void compute_and_output_mandel_line(int fd, int line)
 	 * A temporary array, used to hold color values for the line being drawn
 	 */
 	int i;
+
 	for (i = line; i < y_chars; i += nprocs){
 		compute_mandel_line(i, buf + i * x_chars);
 	}

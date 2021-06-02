@@ -75,8 +75,9 @@ void child(void)
 	 */
 	int i;
 	for(i = 0; i < get_page_size(); i++){
-		heap_private_buf[i] = 1;
+		heap_private_buf[i] = 2;
 	}
+	
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
 		printf("Child: %lu\n", pa);
@@ -93,6 +94,7 @@ void child(void)
 	for(i = 0; i < get_page_size(); i++){
 		heap_shared_buf[i] = 3;
 	}
+	
 	pa = get_physical_address((uint64_t)heap_shared_buf);
 	if(pa) {
 		printf("Child: %lu\n", pa);
@@ -107,7 +109,7 @@ void child(void)
 	 * TODO: Write your code here to complete child's part of Step 11.
 	 */
 	if (mprotect(heap_shared_buf, buffer_size, PROT_READ) == -1) {
-        perror("Failed to remove write protection on child process.");
+        	perror("Failed to remove write protection on child process.");
 	}
 	
 	printf("Child:\n");
@@ -120,7 +122,7 @@ void child(void)
 	/*
 	 * TODO: Write your code here to complete child's part of Step 12.
 	 */
-	if(munmap(heap_private_buf, 2*get_page_size()) == -1) {
+	if(munmap(heap_private_buf, 2 * get_page_size()) == -1) {
 		perror("Failed to unmap heap_private_buf.");
 	}
 	if(munmap(heap_shared_buf, get_page_size()) == -1) {
@@ -129,10 +131,12 @@ void child(void)
 	if(munmap(file_shared_buf, size) == -1) {
 		perror("Failed to unmap file_shared_buf.");
 	}
+	
 	printf("Child:\n");
 	show_va_info((uint64_t)heap_private_buf);
 	show_va_info((uint64_t)heap_shared_buf);
 	show_va_info((uint64_t)file_shared_buf);
+	printf("\n");
 }
 
 /*
@@ -273,10 +277,12 @@ void parent(pid_t child_pid)
 	if(munmap(file_shared_buf, size) == -1) {
 		perror("Failed to unmap file_shared_buf.");
 	}
+	
 	printf("Parent:\n");
 	show_va_info((uint64_t)heap_private_buf);
 	show_va_info((uint64_t)heap_shared_buf);
 	show_va_info((uint64_t)file_shared_buf);
+	printf("\n");
 }
 
 int main(void)
@@ -313,6 +319,7 @@ int main(void)
 	if(heap_private_buf == MAP_FAILED){
 		perror("Failed to create new mapping (heap_private_buf - Step 2)");
 	}
+	
 	printf("\nThe Virtual Address Area, the Permissions etc. of the heap_private_buf is:\n");
 	show_va_info((uint64_t)heap_private_buf);
 	show_maps();
@@ -344,6 +351,7 @@ int main(void)
 	for(i = 0; i < get_page_size(); i++){
 		heap_private_buf[i] = 0;
 	}
+	
 	pa = get_physical_address((uint64_t)heap_private_buf);
 	if(pa) {
 		printf("%lu\n", pa);
@@ -372,9 +380,11 @@ int main(void)
 	if(file_shared_buf == MAP_FAILED){
 		perror("Failed to create new mapping (file_shared_buf - Step 5)");
 	}
+	
 	for(i = 0; i < size; i++) {
 		printf("%c", file_shared_buf[i]);
 	}
+	
 	printf("\nThe Virtual Address Area, the Permissions etc. of the file_shared_buf is:\n");
 	show_va_info((uint64_t)file_shared_buf);
 	show_maps();
@@ -394,13 +404,14 @@ int main(void)
 	if(heap_shared_buf == MAP_FAILED){
 		perror("Failed to create new mapping (heap_shared_buf - Step 6)");
 	}
+
+	for(i = 0; i < get_page_size(); i++){
+		heap_shared_buf[i] = 1;
+	}
+	
 	printf("\nThe Virtual Address Area, the Permissions etc. of the heap_shared_buf is:\n");
 	show_va_info((uint64_t)heap_shared_buf);
 	show_maps();
-
-	for(i = 0; i < get_page_size(); i++){
-		heap_shared_buf[i] = 2;
-	}
 
 	p = fork();
 	if (p < 0)
