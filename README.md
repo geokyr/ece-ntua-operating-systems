@@ -10,40 +10,26 @@ The concepts involved in each assignment can be found below.
 
 ## Lab 01 - Introduction to Programming Environment
 
-- Copying files
+- Working with Linux file paths and directories
 - Creating a new file by merging two input files
-- Writing to file descriptors
+- Writing to files using file descriptors
+- Specifying input and output files via the command line with proper error handling
 - Handling command-line arguments
-- Specifying input and output files via the command line
-- Graceful error handling for missing input files
-
-[]()
-
-- Creating object files
-- Linking object files to produce an executable
+- Creating and linking object files to produce an executable
 - Creating a Makefile for automating the build process
 - Using `strace` for debugging and tracing system calls
-- Working with Linux file paths and directories
-
 
 ## Lab 02 - Process Management and Inter-Process Communication
 
-- Creating and managing processes
+- Creating and managing processes concurrently
 - Process tree structure and hierarchy
 - Using `fork()` and `wait()` system calls
-- Handling multiple processes concurrently
-- Sending and receiving signals between processes
-- Using signals like `SIGSTOP` and `SIGCONT` to control processes
-- Implementing signal-based process synchronization
-- Implementing recursive functions for tree-like data structures
+- Sending and receiving signals between processes, like `SIGSTOP` and `SIGCONT` to control processes and synchronize their execution
 - Traversing and manipulating recursive structures
-- Using pipes for communication between processes
-- Coordinating data exchange between parent and child processes
-- Performing parallel computation in a tree structure
-- Distributing computation tasks to multiple processes
+- Using pipes for coordinating data exchange between parent and child processes
+- Performing parallel computation in a tree structure, by distributing computation tasks to multiple processes
 - Aggregating results from multiple processes
-- Debugging and diagnosing issues in concurrent programs
-- Implementing error handling to identify and address programmatic errors
+- Implementing error handling to identify and diagnose programmatic errors
 - Utilizing system calls like `raise()` and `strace` for process control and monitoring
 
 ## Lab 03 - Synchronization
@@ -51,36 +37,22 @@ The concepts involved in each assignment can be found below.
 - Understanding multithreading and POSIX thread programming
 - Exploring synchronization mechanisms, including mutexes, semaphores, and condition variables defined by POSIX
 - Using atomic operations, such as those provided by the GCC compiler, for synchronization
-- Understanding process management and how to create and manage processes
-- Working with signals for process control and communication
 - Implementing parallel computation techniques in a multithreaded environment
 - Debugging concurrent programs and measuring performance
 - Implementing and parallelizing the calculation of the Mandelbrot set
 - Using tools like `time` to measure program execution time and analyzing the performance of parallelized code
-- Handling terminal interactions and restoring the terminal to its previous state
+- Handling terminal interactions and restoring the terminal to its previous state after program interruption
 
 ## Lab 04 - Virtual Memory Mechanisms
 
 - Understanding the concept of virtual memory in operating systems
-- Exploring system calls related to memory management, such as `mmap()`
 - Studying the memory map of a process using `/proc/[pid]/maps`
 - Using `mmap()` to allocate memory and create a memory map
 - Examining the virtual and physical addresses associated with memory mapping
-- Investigating the effect of zeroing out a buffer on memory mapping
-- Mapping a file into the process's address space
-- Reading and printing the content of the mapped file
-- Observing the changes in the memory map after mapping a file
-- Utilizing `fork()` to create a new process
-- Comparing the memory maps of the parent and child processes
-- Identifying and printing the physical addresses of private buffers
+- Mapping a file into the process's address space and then reading and printing the content of it, while observing the changes in the memory map
+- Creating a new process using `fork()` and comparing the memory maps of the parent and child processes
 - Creating a shared memory buffer using `mmap()` for inter-process communication
 - Writing and reading data from shared memory
-- Investigating the impact of shared memory on memory mapping
-- Employing semaphores to synchronize processes
-- Placing semaphores in shared memory to enable inter-process synchronization
-- Analyzing the performance of semaphore-based synchronization
-- Comparing the performance of the multithreaded and multiprocess implementations
+- Employing semaphores to synchronize processes and placing them in shared memory to enable inter-process synchronization
 - Adapting the Mandelbrot set computation to parallel processing
 - Distributing workload across processes for efficient parallelization
-- Drawing conclusions about the performance of the processes-based implementation
-- Analyzing the impact of shared memory and synchronization mechanisms
