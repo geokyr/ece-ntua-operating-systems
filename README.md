@@ -13,7 +13,7 @@ There were 4 lab assignments in total. Each assignment had a few problems to sol
 
 The concepts involved in each assignment can be found below.
 
-## Lab 01 - Introduction to Programming Environment
+## Lab 01 - The Unix Programming Environment
 
 - Working with Linux file paths and directories
 - Creating a new file by merging two input files
