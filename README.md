@@ -2,6 +2,11 @@
 
 Lab Assignments for the [Operating Systems](https://www.ece.ntua.gr/en/undergraduate/courses/3136) course, during the 6th semester of the School of Electrical and Computer Engineering at the National Technical University of Athens.
 
+## Team Members
+
+- [Georgios Kyriakopoulos](https://github.com/geokyr)
+- [Serafeim Tzelepis](https://github.com/sertze)
+
 ## Lab Assignments
 
 There were 4 lab assignments in total. Each assignment had a few problems to solve. The assignments covered the general principles of Operating Systems and provided a hands-on experience with the Linux kernel, using the C programming language and Bash, a Unix shell. 
