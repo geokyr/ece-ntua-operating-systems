@@ -2,7 +2,7 @@
 
 Lab Assignments for the [Operating Systems](https://www.ece.ntua.gr/en/undergraduate/courses/3136) course, during the 6th semester of the School of Electrical and Computer Engineering at the National Technical University of Athens.
 
-## Team Members
+## Contributors
 
 - [Georgios Kyriakopoulos](https://github.com/geokyr)
 - [Serafeim Tzelepis](https://github.com/sertze)
